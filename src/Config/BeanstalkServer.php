@@ -13,6 +13,7 @@
     use ObjectivePHP\Config\Exception;
     use ObjectivePHP\Config\SingleValueDirectiveGroup;
     use ObjectivePHP\Primitives\Collection\Collection;
+    use Pheanstalk\PheanstalkInterface;
 
     class BeanstalkServer extends SingleValueDirectiveGroup
     {
@@ -27,7 +28,7 @@
         public function __construct($identifier, $value)
         {
             // check value
-            $value = Collection::cast($value)->toArray() + ['port' => null, 'timeout' => null, 'persistent' => false];
+            $value = Collection::cast($value)->toArray() + ['port' => PheanstalkInterface::DEFAULT_PORT, 'timeout' => null, 'persistent' => false];
 
             $mandatory = ['host', 'tube'];
 
