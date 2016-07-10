@@ -1,0 +1,36 @@
+{
+  "name": "objective-php/beanstalk-package",
+  "description": "Beanstalk integration for Objective PHP",
+  "type": "library",
+  "keywords": [
+    "beanstalk",
+    "objective php"
+  ],
+  "homepage": "https://github.com/objective-php/beanstalk-package",
+  "license": "GPL-3.0",
+  "authors": [
+    {
+      "name": "Gauthier 'Rusty' Delamarre",
+      "email": "gauthier@objective-php.org",
+      "role": "lead"
+    }
+  ],
+  "require": {
+    "php": ">=7.0",
+    "objective-php/application": "1.*",
+    "objective-php/primitives": "1.*",
+    "objective-php/config": "1.*",
+    "pda/pheanstalk": "~3.1"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "5.*"
+  },
+  "suggest": {
+    "objective-php/matcher": "~1.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "ObjectivePHP\\Package\\Beanstalk\\": "src/"
+    }
+  }
+}
