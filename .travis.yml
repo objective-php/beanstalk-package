@@ -6,3 +6,5 @@ before_script:
 notifications:
   email: 
     - "team@objective-php.org"
+script:
+  - sh ./run-tests.sh

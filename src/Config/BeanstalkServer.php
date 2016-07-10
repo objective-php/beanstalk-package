@@ -27,7 +27,7 @@
         public function __construct($identifier, $value)
         {
             // check value
-            $value = Collection::cast($value)->toArray();
+            $value = Collection::cast($value)->toArray() + ['port' => null, 'timeout' => null, 'persistent' => false];
 
             $mandatory = ['host', 'tube'];
 

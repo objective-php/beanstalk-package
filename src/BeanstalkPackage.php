@@ -13,6 +13,7 @@
     use ObjectivePHP\Application\ApplicationInterface;
     use ObjectivePHP\Application\Middleware\AbstractMiddleware;
     use ObjectivePHP\Package\Beanstalk\Config\BeanstalkServer;
+    use ObjectivePHP\ServicesFactory\Specs\ClassServiceSpecs;
     use ObjectivePHP\ServicesFactory\Specs\PrefabServiceSpecs;
     use Pheanstalk\Pheanstalk;
 
@@ -65,19 +66,20 @@
         /**
          * @param ApplicationInterface $app
          */
-        protected function registerServices(ApplicationInterface $app)
+        public function registerServices(ApplicationInterface $app)
         {
             $servers = $app->getConfig()->subset(BeanstalkServer::class);
     
             foreach ($servers as $service => $data)
             {
-        
+
                 $serviceName = self::SERVICE_PREFIX . $service;
-        
-                $client = new Pheanstalk($data['host'], $data['port'], $data['timeout'], $data['persistent']);
-                $client->useTube($data['tube']);
-        
-                $app->getServicesFactory()->registerService(new PrefabServiceSpecs($serviceName, $client));
+
+                $service = new ClassServiceSpecs($serviceName, Pheanstalk::class);
+                $service->setParams([$data['host'], $data['port'], $data['timeout'], $data['persistent']]);
+                $service->setSetters(['useTube' => [$data['tube']]]);
+
+                $app->getServicesFactory()->registerService($service);
             }
         }
     
