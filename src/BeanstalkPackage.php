@@ -1,86 +1,62 @@
 <?php
-    /**
-     * This file is part of the Objective PHP project
-     *
-     * More info about Objective PHP on www.objective-php.org
-     *
-     * @license http://opensource.org/licenses/GPL-3.0 GNU GPL License 3.0
-     */
-    
-    namespace ObjectivePHP\Package\Beanstalk;
-    
-    
-    use ObjectivePHP\Application\ApplicationInterface;
-    use ObjectivePHP\Application\Middleware\AbstractMiddleware;
-    use ObjectivePHP\Package\Beanstalk\Config\BeanstalkServer;
-    use ObjectivePHP\ServicesFactory\Specs\ClassServiceSpecs;
-    use ObjectivePHP\ServicesFactory\Specs\PrefabServiceSpecs;
-    use Pheanstalk\Pheanstalk;
+
+namespace ObjectivePHP\Package\Beanstalk;
+
+use ObjectivePHP\Application\Package\PackageInterface;
+use ObjectivePHP\Application\Workflow\PackagesInitListener;
+use ObjectivePHP\Application\Workflow\WorkflowEventInterface;
+use ObjectivePHP\Config\Config;
+use ObjectivePHP\Config\ConfigAccessorsTrait;
+use ObjectivePHP\Config\ConfigInterface;
+use ObjectivePHP\Config\ConfigProviderInterface;
+use ObjectivePHP\Package\Beanstalk\Config\BeanstalkServer;
+use Pheanstalk\Pheanstalk;
+
+/**
+ * Class BeanstalkPackage
+ *
+ * @package Fei\Service\SecondPartyLogistics\Tool\Package\Beanstalk
+ */
+class BeanstalkPackage implements PackageInterface, ConfigProviderInterface, PackagesInitListener
+{
+    use ConfigAccessorsTrait;
 
     /**
-     * Class BeanstalkPackage
-     *
-     * @package ObjectivePHP\Package\Beanstalk
+     * Beanstalk services common prefix
      */
-    class BeanstalkPackage extends AbstractMiddleware
+    const SERVICE_PREFIX = 'beanstalk.';
+
+    /**
+     * @return ConfigInterface
+     */
+    public function getConfig(): ConfigInterface
     {
-
-        /**
-         * Beanstalk services common prefix
-         */
-        const SERVICE_PREFIX = 'beanstalk.';
-
-
-        /**
-         * @var string
-         */
-        protected $bootstrapStep;
-
-
-        /**
-         * BeanstalkPackage constructor.
-         *
-         * @param string $bootstrapStep
-         */
-        public function __construct($bootstrapStep = 'bootstrap')
-        {
-            $this->bootstrapStep = $bootstrapStep;
-        }
-    
-    
-        /**
-         * @param ApplicationInterface $app
-         *
-         * @throws Exception
-         */
-        public function run(ApplicationInterface $app)
-        {
-            if(empty($app->getSteps()[$this->bootstrapStep]))
-            {
-                throw new Exception(sprintf('Cannot plug Beanstalk services registration to specified application step: "%s" because this step has not been defined.', $this->bootstrapStep));
-            }
-
-            $app->getStep($this->bootstrapStep)->plug([$this, 'registerServices']);
-        }
-
-        /**
-         * @param ApplicationInterface $app
-         */
-        public function registerServices(ApplicationInterface $app)
-        {
-            $servers = $app->getConfig()->subset(BeanstalkServer::class);
-    
-            foreach ($servers as $service => $data)
-            {
-
-                $serviceName = self::SERVICE_PREFIX . $service;
-
-                $service = new ClassServiceSpecs($serviceName, Pheanstalk::class);
-                $service->setParams([$data['host'], $data['port'], $data['timeout'], $data['persistent']]);
-                $service->setSetters(['useTube' => [$data['tube']]]);
-
-                $app->getServicesFactory()->registerService($service);
-            }
-        }
-    
+        return new Config(new BeanstalkServer());
     }
+
+    /**
+     * @param WorkflowEventInterface $event
+     */
+    public function onPackagesInit(WorkflowEventInterface $event)
+    {
+        /**
+         * @var string $key
+         * @var BeanstalkServer $config
+         */
+        foreach ($event->getApplication()->getConfig()->get(BeanstalkServer::KEY) as $key => $config) {
+            $event->getApplication()->getServicesFactory()->registerService([
+                'id'     => self::SERVICE_PREFIX . $key,
+                'class'  => Pheanstalk::class,
+                'params' => [
+                    $config->getHost(),
+                    $config->getPort(),
+                    $config->getConnectTimeout(),
+                    $config->getConnectPersistent()
+                ],
+                'setters' => [
+                    'useTube' => $config->getTube()
+                ]
+            ]);
+        }
+    }
+}
